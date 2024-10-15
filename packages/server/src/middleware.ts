@@ -14,7 +14,7 @@ export type NextFunction<TContext extends AnyContext> = <
   variables?: TNextVariables,
 ) => Promise<
   MiddlewareResponse<
-    Simplify<ShallowMerge<TNextVariables, TContext['variables']>>
+    Simplify<ShallowMerge<TContext['variables'], TNextVariables>>
   >
 >;
 
@@ -22,9 +22,15 @@ export type NextFunction<TContext extends AnyContext> = <
  * @internal
  */
 export type MiddlewareFn<TContext extends AnyContext> = (options: {
-  ctx: TContext;
+  ctx: Simplify<TContext>;
   next: NextFunction<TContext>;
 }) => ReturnType<NextFunction<TContext>>;
+
+export interface MiddlewareResponse<_TVariables extends object>
+  extends Response {}
+
+export type inferVariablesFromMiddlewareResponse<T> =
+  T extends MiddlewareResponse<infer Variables> ? Variables : never;
 
 /**
  * The middleware class container
@@ -134,35 +140,3 @@ export class Middleware<TArgs, TContext extends Context> {
     };
   }
 }
-
-export type AnyMiddleware = Middleware<unknown, Context>;
-
-/**
- * @internal
- */
-interface MiddlewareOkResponse<_Tcontext extends Context> {
-  ok: true;
-  data: unknown;
-}
-
-/**
- * @internal
- */
-interface MiddlewareErrorResponse<_Tcontext extends object> {
-  ok: false;
-  error: PtsqError;
-}
-
-export type MiddlewareResponse<_TContext extends object> =
-  | MiddlewareOkResponse<_TContext>
-  | MiddlewareErrorResponse<_TContext>;
-
-export type AnyMiddlewareResponse = MiddlewareResponse<object>;
-
-/**
- * @internal
- */
-export type inferContextFromMiddlewareResponse<TMiddlewareResponse> =
-  TMiddlewareResponse extends MiddlewareResponse<infer iContext>
-    ? iContext
-    : never;

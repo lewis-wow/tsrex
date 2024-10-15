@@ -1,6 +1,6 @@
 import { AnyMutation } from './mutation';
 import { AnyQuery } from './query';
-import { AnyRouter, inferContextFromRouter } from './router';
+import { AnyRouter, inferContextFromRouter } from './router_';
 
 /**
  * @internal

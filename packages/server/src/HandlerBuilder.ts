@@ -1,16 +1,16 @@
 import { Type, type TIntersect, type TSchema } from '@sinclair/typebox';
-import {
+import type {
   AnyContext,
   ContextOptions,
   inferContext,
   inferContextOptions,
 } from './Context';
-import {
-  inferContextFromMiddlewareResponse,
+import type {
+  inferVariablesFromMiddlewareResponse,
   MiddlewareFn,
-  NextFunction,
 } from './middleware';
-import type { ShallowMerge } from './types';
+import type { MaybePromise, ShallowMerge } from './types';
+import type { inferValidatorValue, Validators } from './Validators';
 
 export class HandlerBuilder<
   TContext extends ContextOptions = {
@@ -18,20 +18,27 @@ export class HandlerBuilder<
     variables: {};
   },
 > {
+  private _def: {
+    middlewares: MiddlewareFn<any>[];
+    validators: Validators;
+  } = {
+    middlewares: [],
+    validators: {},
+  };
+
   params<TNextParams extends TSchema>(nextParams: TNextParams) {
-    type ContextOptions = TContext;
     type CurrentParamsSchema = ContextOptions['validators']['params'];
 
     type NextParamsSchema = CurrentParamsSchema extends TSchema
       ? TIntersect<[CurrentParamsSchema, TNextParams]>
       : TNextParams;
 
-    return new HandlerBuilder<
+    const newHandlerBuilder = this.clone<
       ShallowMerge<
         TContext,
         {
           validators: ShallowMerge<
-            ContextOptions['validators'],
+            TContext['validators'],
             {
               params: NextParamsSchema;
             }
@@ -39,22 +46,29 @@ export class HandlerBuilder<
         }
       >
     >();
+
+    const newParamsSchema = newHandlerBuilder._def.validators.params
+      ? Type.Intersect([newHandlerBuilder._def.validators.params, nextParams])
+      : nextParams;
+
+    newHandlerBuilder._def.validators.params = newParamsSchema;
+
+    return newHandlerBuilder;
   }
 
   body<TNextBody extends TSchema>(nextBody: TNextBody) {
-    type ContextOptions = inferContextOptions<TContext>;
     type CurrentBodySchema = ContextOptions['validators']['body'];
 
     type NextbodySchema = CurrentBodySchema extends TSchema
       ? TIntersect<[CurrentBodySchema, TNextBody]>
       : TNextBody;
 
-    return new HandlerBuilder<
+    const newHandlerBuilder = this.clone<
       ShallowMerge<
         TContext,
         {
           validators: ShallowMerge<
-            ContextOptions['validators'],
+            TContext['validators'],
             {
               body: NextbodySchema;
             }
@@ -62,22 +76,29 @@ export class HandlerBuilder<
         }
       >
     >();
+
+    const newBodySchema = newHandlerBuilder._def.validators.body
+      ? Type.Intersect([newHandlerBuilder._def.validators.body, nextBody])
+      : nextBody;
+
+    newHandlerBuilder._def.validators.body = newBodySchema;
+
+    return newHandlerBuilder;
   }
 
   query<TNextQuery extends TSchema>(nextQuery: TNextQuery) {
-    type ContextOptions = inferContextOptions<TContext>;
     type CurrentQuerySchema = ContextOptions['validators']['query'];
 
     type NextQuerySchema = CurrentQuerySchema extends TSchema
       ? TIntersect<[CurrentQuerySchema, TNextQuery]>
       : TNextQuery;
 
-    return new HandlerBuilder<
+    const newHandlerBuilder = this.clone<
       ShallowMerge<
         TContext,
         {
           validators: ShallowMerge<
-            ContextOptions['validators'],
+            TContext['validators'],
             {
               query: NextQuerySchema;
             }
@@ -85,22 +106,29 @@ export class HandlerBuilder<
         }
       >
     >();
+
+    const newQuerySchema = newHandlerBuilder._def.validators.query
+      ? Type.Intersect([newHandlerBuilder._def.validators.query, nextQuery])
+      : nextQuery;
+
+    newHandlerBuilder._def.validators.query = newQuerySchema;
+
+    return newHandlerBuilder;
   }
 
   response<TNextResponse extends TSchema>(nextResponse: TNextResponse) {
-    type ContextOptions = inferContextOptions<TContext>;
-    type CurrentResponseSchema = ContextOptions['validators']['response'];
+    type CurrentResponseSchema = TContext['validators']['response'];
 
     type NextResponseSchema = CurrentResponseSchema extends TSchema
       ? TIntersect<[CurrentResponseSchema, TNextResponse]>
       : TNextResponse;
 
-    return new HandlerBuilder<
+    const newHandlerBuilder = this.clone<
       ShallowMerge<
         TContext,
         {
           validators: ShallowMerge<
-            ContextOptions['validators'],
+            TContext['validators'],
             {
               response: NextResponseSchema;
             }
@@ -108,22 +136,32 @@ export class HandlerBuilder<
         }
       >
     >();
+
+    const newResponseSchema = newHandlerBuilder._def.validators.response
+      ? Type.Intersect([
+          newHandlerBuilder._def.validators.response,
+          nextResponse,
+        ])
+      : nextResponse;
+
+    newHandlerBuilder._def.validators.response = newResponseSchema;
+
+    return newHandlerBuilder;
   }
 
   error<TNextError extends TSchema>(nextError: TNextError) {
-    type ContextOptions = inferContextOptions<TContext>;
     type CurrentErrorSchema = ContextOptions['validators']['error'];
 
     type NextErrorSchema = CurrentErrorSchema extends TSchema
       ? TIntersect<[CurrentErrorSchema, TNextError]>
       : TNextError;
 
-    return new HandlerBuilder<
+    const newHandlerBuilder = this.clone<
       ShallowMerge<
         TContext,
         {
           validators: ShallowMerge<
-            ContextOptions['validators'],
+            TContext['validators'],
             {
               error: NextErrorSchema;
             }
@@ -131,12 +169,24 @@ export class HandlerBuilder<
         }
       >
     >();
+
+    const newErrorSchema = newHandlerBuilder._def.validators.error
+      ? Type.Intersect([newHandlerBuilder._def.validators.error, nextError])
+      : nextError;
+
+    newHandlerBuilder._def.validators.error = newErrorSchema;
+
+    return newHandlerBuilder;
   }
 
-  use(middlewareFn: MiddlewareFn<inferContext<TContext>>) {
-    type NextVariables = Awaited<ReturnType<typeof middlewareFn>>;
+  use<TMiddlewareFn extends MiddlewareFn<inferContext<TContext>>>(
+    middlewareFn: TMiddlewareFn,
+  ) {
+    type NextVariables = inferVariablesFromMiddlewareResponse<
+      Awaited<ReturnType<TMiddlewareFn>>
+    >;
 
-    return new HandlerBuilder<
+    const newHandlerBuilder = this.clone<
       ShallowMerge<
         TContext,
         {
@@ -144,35 +194,25 @@ export class HandlerBuilder<
         }
       >
     >();
+
+    newHandlerBuilder._def.middlewares.push(middlewareFn);
+
+    return newHandlerBuilder;
   }
 
-  get() {}
+  handler(handlerFn: HandlerFn<inferContext<TContext>>) {
+    return handlerFn;
+  }
 
-  post() {}
-
-  put() {}
-
-  delete() {}
-
-  patch() {}
-
-  head() {}
-
-  options() {}
-
-  trace() {}
-
-  connect() {}
-
-  all() {}
+  private clone<TNextContextOptions extends ContextOptions>() {
+    return new HandlerBuilder<TNextContextOptions>(this._def);
+  }
 }
 
-const handler = new HandlerBuilder().params(Type.Object({ id: Type.String() }));
+export type HandlerFn<TContext extends AnyContext> = (options: {
+  ctx: TContext;
+}) => MaybePromise<
+  inferValidatorValue<inferContextOptions<TContext>['validators']['response']>
+>;
 
-const next = handler.use(async ({ ctx, next }) => {
-  const vars = await next({
-    test: 'test',
-  });
-
-  return vars.ok;
-});
+export type AnyHandlerFn = HandlerFn<any>;

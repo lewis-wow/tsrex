@@ -20,7 +20,7 @@ import {
 } from './middleware';
 import { parseRequest } from './parseRequest';
 import { Resolver } from './resolver';
-import { Router, type AnyRouter, type RouterRoutes } from './router';
+import { Router, type AnyRouter, type RouterRoutes } from './router_';
 import { trimLeadingAndTrailingSlashes } from './trimLeadingAndTrailingSlashes';
 import { ResolverType } from './types';
 

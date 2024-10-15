@@ -20,7 +20,7 @@ export {
 export { Query, type AnyQuery } from './query';
 export { Mutation, type AnyMutation } from './mutation';
 export { Route, type AnyRoute } from './route';
-export { Router, type AnyRouter, type RouterRoutes } from './router';
+export { Router, type AnyRouter, type RouterRoutes } from './router_';
 
 export type { Context } from './Context';
 export type {

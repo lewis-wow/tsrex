@@ -2,7 +2,7 @@ import { Type } from '@sinclair/typebox';
 import { expect, test } from 'vitest';
 import { PtsqError } from './ptsqError';
 import { ptsq } from './ptsqServerBuilder';
-import { Router } from './router';
+import { Router } from './router_';
 
 test('Should merge two routers', async () => {
   const { router, resolver } = ptsq({
