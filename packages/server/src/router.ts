@@ -1,4 +1,4 @@
-import type { Context } from './context';
+import type { Context } from './Context';
 import { type AnyMiddlewareResponse, type MiddlewareMeta } from './middleware';
 import type { Mutation } from './mutation';
 import { PtsqError } from './ptsqError';

@@ -1,5 +1,5 @@
 import type { TSchema } from '@sinclair/typebox';
-import type { Context } from './context';
+import type { Context } from './Context';
 import { inferArgsFromTypeboxArgsSchema } from './inferArgs';
 import { inferOutputFromTypeboxOutputSchema } from './inferOutput';
 import { JsonSchemaParser } from './jsonSchemaParser';

@@ -8,7 +8,7 @@ import type {
   Context,
   inferContextFromContextBuilder,
   inferContextParamsFromContextBuilder,
-} from './context';
+} from './Context';
 import { Envelope } from './envelope';
 import { defaultJsonSchemaParser, JsonSchemaParser } from './jsonSchemaParser';
 import {

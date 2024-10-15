@@ -22,7 +22,7 @@ export { Mutation, type AnyMutation } from './mutation';
 export { Route, type AnyRoute } from './route';
 export { Router, type AnyRouter, type RouterRoutes } from './router';
 
-export type { Context } from './context';
+export type { Context } from './Context';
 export type {
   ResolverType,
   MaybePromise,

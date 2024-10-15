@@ -1,5 +1,5 @@
 import { Type, type TIntersect, type TSchema } from '@sinclair/typebox';
-import type { Context } from './context';
+import type { Context } from './Context';
 import { inferDecodedArgsFromTypeboxArgsSchema } from './inferArgs';
 import { inferDecodedOutputFromTypeboxOutputSchema } from './inferOutput';
 import { defaultJsonSchemaParser, JsonSchemaParser } from './jsonSchemaParser';

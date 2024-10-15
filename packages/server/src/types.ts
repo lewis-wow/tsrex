@@ -19,9 +19,11 @@ export type ErrorMessage<TMessage extends string> = TMessage & {
 /**
  * @internal
  */
-export type ShallowMerge<T extends object, U extends object> = {
-  [K in keyof T]: K extends keyof U ? U[K] : T[K];
-} & U;
+export type ShallowMerge<T extends object, U extends object> = Simplify<
+  {
+    [K in keyof T]: K extends keyof U ? U[K] : T[K];
+  } & U
+>;
 
 /**
  * @internal

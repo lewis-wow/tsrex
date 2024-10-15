@@ -1,6 +1,6 @@
 import { Type, type TSchema } from '@sinclair/typebox';
 import type { JSONSchema } from 'json-schema-to-ts';
-import type { Context } from './context';
+import type { Context } from './Context';
 import { inferArgsFromTypeboxArgsSchema } from './inferArgs';
 import { JsonSchemaParser } from './jsonSchemaParser';
 import { Middleware, type MiddlewareMeta } from './middleware';

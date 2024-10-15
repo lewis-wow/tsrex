@@ -1,34 +1,20 @@
-import type { MaybePromise } from './types';
+import type { inferValidatorValue, Validators } from './Validators';
 
-/**
- * Context is a generic object that is passed through the middleware chain
- */
-export type Context = object;
+export type ContextOptions = {
+  validators: Validators;
+  variables: object;
+};
 
-/**
- * @internal
- */
-export type ContextBuilder<TContext extends Context> = (
-  params: any,
-) => MaybePromise<TContext>;
+export type Context<out T extends ContextOptions> = {
+  body: inferValidatorValue<T['validators']['body']>;
+  query: inferValidatorValue<T['validators']['query']>;
+  params: inferValidatorValue<T['validators']['params']>;
+  variables: T['variables'];
+  request: Request;
+};
 
-export type AnyContextBuilder = ContextBuilder<Context>;
+export type AnyContext = Context<ContextOptions>;
 
-/**
- * @internal
- */
-export type inferContextFromContextBuilder<
-  TContextBuilder extends AnyContextBuilder | undefined,
-> = TContextBuilder extends AnyContextBuilder
-  ? Awaited<ReturnType<TContextBuilder>>
-  : // eslint-disable-next-line @typescript-eslint/ban-types
-    {};
+export type inferContextOptions<T> = T extends Context<infer U> ? U : never;
 
-/**
- * @internal
- */
-export type inferContextParamsFromContextBuilder<
-  TContextBuilder extends AnyContextBuilder | undefined,
-> = TContextBuilder extends AnyContextBuilder
-  ? Parameters<TContextBuilder>[0]
-  : undefined;
+export type inferContext<T> = T extends ContextOptions ? Context<T> : never;

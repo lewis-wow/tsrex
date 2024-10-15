@@ -1,5 +1,5 @@
 import { TSchema } from '@sinclair/typebox';
-import type { Context } from './context';
+import type { AnyContext, Context } from './Context';
 import { JsonSchemaParser } from './jsonSchemaParser';
 import { PtsqError } from './ptsqError';
 import { ShallowMerge } from './types';
@@ -8,44 +8,23 @@ import type { ResolverType, Simplify } from './types';
 /**
  * @internal
  */
-export type NextFunction<TContext extends Context> = {
-  (): Promise<MiddlewareResponse<TContext>>;
-
-  <TNextContext extends Context | undefined = undefined>(options?: {
-    ctx?: TNextContext;
-    meta?: MiddlewareMeta;
-  }): Promise<
-    MiddlewareResponse<
-      Simplify<
-        ShallowMerge<
-          TContext,
-          TNextContext extends Context ? TNextContext : TContext
-        >
-      >
-    >
-  >;
-};
+export type NextFunction<TContext extends AnyContext> = <
+  TNextVariables extends object,
+>(
+  variables?: TNextVariables,
+) => Promise<
+  MiddlewareResponse<
+    Simplify<ShallowMerge<TNextVariables, TContext['variables']>>
+  >
+>;
 
 /**
  * @internal
  */
-export type MiddlewareFunction<TArgs, TContext extends Context> = (options: {
-  input: TArgs;
-  meta: MiddlewareMeta;
+export type MiddlewareFn<TContext extends AnyContext> = (options: {
   ctx: TContext;
   next: NextFunction<TContext>;
 }) => ReturnType<NextFunction<TContext>>;
-
-/**
- * @internal
- */
-export type AnyMiddlewareFunction = MiddlewareFunction<unknown, Context>;
-
-export type MiddlewareMeta = {
-  input: unknown;
-  route: string;
-  type: ResolverType;
-};
 
 /**
  * The middleware class container
@@ -169,16 +148,16 @@ interface MiddlewareOkResponse<_Tcontext extends Context> {
 /**
  * @internal
  */
-interface MiddlewareErrorResponse<_Tcontext extends Context> {
+interface MiddlewareErrorResponse<_Tcontext extends object> {
   ok: false;
   error: PtsqError;
 }
 
-export type MiddlewareResponse<_TContext extends Context> =
+export type MiddlewareResponse<_TContext extends object> =
   | MiddlewareOkResponse<_TContext>
   | MiddlewareErrorResponse<_TContext>;
 
-export type AnyMiddlewareResponse = MiddlewareResponse<Context>;
+export type AnyMiddlewareResponse = MiddlewareResponse<object>;
 
 /**
  * @internal
@@ -187,49 +166,3 @@ export type inferContextFromMiddlewareResponse<TMiddlewareResponse> =
   TMiddlewareResponse extends MiddlewareResponse<infer iContext>
     ? iContext
     : never;
-
-/**
- * @internal
- */
-class StandaloneMiddlewareBuilder<TArgs, TContext extends Context> {
-  create<TMiddlewareFunction extends MiddlewareFunction<TArgs, TContext>>(
-    middlewareFunction: TMiddlewareFunction,
-  ) {
-    return middlewareFunction;
-  }
-}
-
-/**
- * @internal
- */
-type StandaloneMiddlewareBuilderFunction = {
-  (): StandaloneMiddlewareBuilder<unknown, Context>;
-
-  <
-    TMiddlewareOptions extends {
-      ctx: Context;
-    },
-  >(): StandaloneMiddlewareBuilder<unknown, TMiddlewareOptions['ctx']>;
-
-  <
-    TMiddlewareOptions extends {
-      input: unknown;
-    },
-  >(): StandaloneMiddlewareBuilder<TMiddlewareOptions['input'], Context>;
-
-  <
-    TMiddlewareOptions extends {
-      ctx: Context;
-      input: unknown;
-    },
-  >(): StandaloneMiddlewareBuilder<
-    TMiddlewareOptions['input'],
-    TMiddlewareOptions['ctx']
-  >;
-};
-
-/**
- * Creates standalone middleware
- */
-export const middleware: StandaloneMiddlewareBuilderFunction = () =>
-  new StandaloneMiddlewareBuilder();
