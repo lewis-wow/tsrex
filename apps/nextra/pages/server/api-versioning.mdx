@@ -1,0 +1,36 @@
+import { Image } from '../../components/Image';
+import { Video } from '../../components/Video';
+
+# API versioning
+
+API versioning is a key element of application interface management.
+The goal of versioning is to ensure stability and compatibility between different versions while allowing incremental updates and modifications.
+
+REST API versioning usually works by extending a URI with a given version, for example `https://api.example.com/v1/endpoint`.
+The same result in PTSQ can be achieved by nesting routers.
+
+<Image src="/assets/api-versioning.png" alt="API versioning" />
+
+<Video src="/assets/api-versioning.mp4" />
+
+```ts copy filename="Server side"
+import { baseRouterV1 } from 'baseRouterV1';
+import { baseRouterV2 } from 'baseRouterV2';
+
+export const baseRouter = router({
+  v1: baseRouterV1,
+  v2: baseRouterV2,
+});
+```
+
+Subsequently, you can retrieve your API version within the client by accessing it as part of the route.
+
+```ts copy filename="Client side"
+const client = createProxyClient<BaseRouter>({
+  url: 'http://localhost:4000/ptsq',
+});
+
+client.v1.user.query();
+
+client.v2.user.query();
+```

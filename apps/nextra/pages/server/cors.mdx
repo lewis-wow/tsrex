@@ -1,0 +1,59 @@
+# CORS
+
+[CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) stands for Cross-Origin Resource Sharing.
+In a nutshell, as a security measure, browsers aren't allowed to access resources outside their domain.
+
+If your API and web apps are deployed to different domains (or subdomains), you'll have to worry about CORS. For example, if your web client is deployed to example.com but your PTSQ server is api.example.com. For security reasons, your browser will not allow XHR requests to a domain other than the one currently in the browser's address bar.
+
+The plugins are using [WHATWG node server library](https://www.npmjs.com/package/@whatwg-node/server).
+
+```ts filename="CORS options interface"
+export type CORSOptions =
+  | {
+      origin?: string[] | string;
+      methods?: string[];
+      allowedHeaders?: string[];
+      exposedHeaders?: string[];
+      credentials?: boolean;
+      maxAge?: number;
+    }
+  | false;
+```
+
+```ts copy filename="CORS setting"
+import { ptsq, useCORS } from '@ptsq/server';
+
+const { resolver, router, serve } = ptsq({
+  ctx: createContext,
+  plugins: [
+    useCORS({
+      origin: 'http://localhost:4000',
+      credentials: true,
+      allowedHeaders: ['X-Custom-Header'],
+      methods: ['POST'],
+      maxAge: 300,
+      exposedHeaders: ['Content-Type'],
+    }),
+  ],
+}).create();
+```
+
+In the CORS plugin, there is a translation from the object to the HTTP CORS headers.
+
+```ts filename="CORS settings in useCORS function"
+cors: {
+  origin: 'http://localhost:4000',
+  credentials: true,
+  allowedHeaders: ['X-Custom-Header'],
+  methods: ['POST']
+}
+```
+
+This setting will return the following headers:
+
+```txt filename="Resulting CORS headers"
+Access-Control-Allow-Origin: 'http://localhost:4000'
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: POST
+Access-Control-Allow-Headers: X-Custom-Header
+```

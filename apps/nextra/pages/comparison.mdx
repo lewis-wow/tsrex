@@ -1,0 +1,94 @@
+# Comparison
+
+## REST API
+
+Neither the REST architecture nor the tools that create REST APIs support the creation of strongly typed APIs by default.
+To create an overview of endpoints, allowed input data types, and output types, web documentation describing the interface is usually created.
+PTSQ also supports the ability to create web documentation.
+However, unlike the REST architecture, it supports the creation and export of an API schema.
+Documentation alone without type assumptions inside the IDE is not very practical.
+The web service documentation has to be constantly consulted during development, making development non-fluent.
+By creating the schema and then typing inside the development environments, fluency and efficiency with querying the service is achieved.
+
+Some of the most well-known frameworks for creating REST APIs inside Node.js include Express, Koa, and Fastify.
+None of these frameworks support the ability to create a strongly typed API, and most don't even provide the ability to create a custom request context.
+Some tools support creating middleware, but since they don't provide a request context, customizations inside the middleware are usually applied directly to the request object.
+None of the mentioned frameworks support type-safe context modification as PTSQ supports.
+
+None of the listed frameworks support deployment in any environment other than Node.js, while PTSQ supports a wide range of frameworks and environments where an application can be deployed.
+
+Creating APIs using REST frameworks is similarly challenging to creating PTSQ APIs.
+However, PTSQ offers argument validation and type assumptions on both the server and client side.
+
+Libraries such as Zodios or TS-REST allow you to define REST APIs with validation schemes and thus create type assumptions on both client and server side.
+However, the schemas are distributed as NPM packages, and this is not very practical for creating an open API.
+PTSQ supports introspection, creating the ability to get the interface schema directly from the server source.
+
+One of the state-of-the-art tools for creating REST APIs is feTS, which, like PTSQ, uses Typebox JSON validation schemas to create type assumptions for both client and server.
+It also enables the creation of a strongly-typed open API by exporting the interface schema in the form of an Open API Specification (OAS).
+Like PTSQ, the feTS library supports deploying applications inside several environments such as Node.js, Bun, Deno or serverless environments.
+Its main drawback is the difficulty of creating an otyped API, you need to define both successful endpoint outputs and all error outputs, without the possibility of creating prebuilt components, which PTSQ supports in the form of a resolver.
+This makes the creation of the API very tedious and challenging.
+
+## GraphQL
+
+It is important to emphasize that GraphQL is not only focused on creating strongly typed APIs.
+It offers much more, and its flexible model and client-side query definition capabilities are almost unsurpassed.
+GraphQL has some drawbacks, especially in terms of slow field validation compared to the GraphQL schema and sometimes very complex creation that is not entirely straightforward and requires knowledge and setup of a lot of other tools.
+
+As such, while GraphQL focuses on compatibility with most programming languages, PTSQ only supports TypeScript or JavaScript.
+The PTSQ is designed for full-stack development in TypeScript, which has been very popular recently and allows benefits that cannot be achieved when using other server-side languages.
+
+PTSQ is aimed at making it easy to create a strongly typed open API while providing type safety when writing code inside the library.
+Thus, it makes no sense to compare the flexible model of explicit data selection or entity nesting that GraphQL provides.
+PTSQ does not offer these capabilities.
+
+Since the standard GraphQL library does not support type-safe code when creating a server, the comparison will focus primarily on the schema generators.
+The most widely used generators in the TypeScript ecosystem are Nexus and Pothos.
+Both of these schema generators provide type-safe server-side code, but both require code generation to create a GraphQL schema.
+PTSQ does not require code generation for server-side schema creation, nor for API schema creation.
+Thus, during local development, changes from the server are immediately reflected to the client side due to the TypeScript type sharing of the application root router.
+Generating GraphQL schemas does not allow for such a seamless transfer of types or schema to the client.
+
+Validation of arguments or outputs is done inside the PTSQ using JSON validation schemas, and since the validation schemas are compiled, the validation step is very efficient.
+JSON schemas represent both runtime validation, TypeScript-level validation, and even part of the PTSQ schema during introspection.
+Typebox allows for the definition of complex validation schemas, and the main advantage is the ability to share the schema between server and client to use dual validation.
+GraphQL requires a GraphQL schema to be defined when creating arrays; while this allows data to be validated against a GraphQL data type, such validation is insufficient in most cases.
+Therefore, it is necessary to define a custom validation schema that allows comprehensive data validation.
+This leads to a repetition of the validation step, because part of the validation performed by the GraphQL schema must then be performed again at the validation schema level.
+
+The main advantages of PTSQ are the quick and easy creation of a strongly typed API without the need for code generation, even when connected to a PTSQ client.
+GraphQL does not provide such capabilities due to the need for schema generation, and even when using a unified repository, code generation is required to create a strongly-typed GraphQL client.
+
+There are several providers of GraphQL servers in JavaScript, the most well-known being GraphQL Apollo or GraphQL Yoga.
+Most servers allow you to deploy the GraphQL API in many environments, similar to PTSQ.
+
+## tRPC
+
+tRPC, unlike PTSQ, does not create strongly typed open APIs.
+The typing is only proprietary in the case of a non-public project, making it impossible to create typed external clients using the API.
+While it does not require code generation, this limitation of tRPC was one of the main motivations behind the creation of the PTSQ library.
+The impossibility of creating a strongly-typed open API affects not only the openness to external clients itself, but also the strict project structure that tRPC requires.
+A single repository is unavoidable using tRPC, and tRPC is unusable when developing with multiple repositories.
+PTSQ offers a heavily typed open API and eliminates all of these disadvantages, both the use of typing for external clients and the strict project setup.
+
+tRPC uses transformers to transform inputs and outputs.
+A transformer can convert JavaScript structures into JSON objects and vice versa.
+This is useful for parsing and serializing data transferred between client and server.
+PTSQ uses validation schemas and the ability to transform data within a schema, primarily for introspection capabilities.
+This is because a transformer cannot be shared using schema introspection in JSON format, and since the server and client must define an identical transformer to cover all values, transformations using transformers would not make sense with the openness of the API.
+
+The tRPC allows the use of different validation schemes.
+While this flexibility is nice, it introduces some problems when inferring types in TypeScript.
+tRPC can lie in various cases in both argument and context types, adding problems for developers rather than helping and speeding up application development.
+PTSQ only supports one validation schema builder, and that's mainly because I haven't found other JSON schema builders with type inference capabilities.
+
+## Zodios and TS-REST
+
+Both projects, Zodios and TS-REST, operate, like GraphQL, with 3 layers: server, schema and client.
+Unlike GraphQL, schema cannot be generated and creating a strongly typed API is quite challenging.
+PTSQ derives the schema from the server itself, so the developer does not have to write it manually.
+
+At the same time, the Zodios or TS-REST schema is written in TypeScript.
+This means that it cannot be shared by introspection.
+Sharing the schema as an NPM package, which these libraries support, is very impractical for the open API.

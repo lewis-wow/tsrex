@@ -1,0 +1,111 @@
+# Context
+
+The context retains crucial information across all components such as resolvers, queries, mutations, and middlewares within your application. If you need to customize the context during runtime, middleware is the sole mechanism available to achieve this. By leveraging middleware, you can dynamically adjust the context to suit the specific needs of your application as it progresses through various stages of execution.
+
+```ts copy
+const createContext = ({ req, res }: { req: Request; res: Response }) => {
+  return {
+    req,
+    res,
+  };
+};
+
+const { resolver, router, serve } = ptsq({
+  ctx: createContext,
+}).create();
+```
+
+Context types like context input and output are automatically inferred, so you don't have to care about them.
+
+The only argument that context gets is the adapter request and response information.
+
+## Async context
+
+The context builder function's ability to be asynchronous provides a powerful tool for handling various runtime tasks. For instance, you can await database requests or JWT token decoding operations within this function. This asynchronous capability ensures that the context is populated with accurate and up-to-date information before continuing with the execution flow of your application.
+
+```ts copy
+const createContext = async ({ req, res }: { req: Request; res: Response }) => {
+  const user = await JWT.decode(req.cookies.jwt);
+
+  return {
+    req,
+    res,
+    user,
+  };
+};
+
+const { resolver, router, serve } = ptsq({
+  ctx: createContext,
+}).create();
+```
+
+## Middlewares
+
+You can also mutate the context. The only place where you can do that is middleware.
+
+```ts copy
+const resolverWithNewPropInCtx = resolver.use(({ ctx, next }) => {
+  return next({
+    ctx: {
+      newProperty: 'my-new-property',
+    },
+  });
+});
+```
+
+If I use the `resolverWithNewPropInCtx` there will be `newProperty` in the context. The `newProperty` will be also in the type level as well.
+
+### Middleware checks
+
+Typically you want to use middleware for authentication.
+
+```ts copy
+const authedResolver = resolver.use(({ ctx /* User | undefined */, next }) => {
+  if (!ctx.user) throw new PtsqError({ code: 'UNAUTHORIZED' });
+
+  return next({
+    ctx: {
+      user: ctx.user, // User - because of the check before
+    },
+  }); // { user: User }
+});
+```
+
+The type of the `authedResolver` context will be inferred as in the example before.
+
+The most important piece of code is this
+
+```ts
+return next({
+  ctx: {
+    user: ctx.user,
+  }
+});
+```
+
+By returning the next function and passing the updated context, the type can be inferred in the subsequent resolver. This streamlined approach allows for seamless propagation of context information throughout the resolver chain, facilitating type inference and ensuring smooth data flow within your application.
+
+## Mutation and query
+
+You can access the context in the mutations and queries.
+
+```ts
+authedResolver
+  .output(Type.String())
+  .query(({ ctx /* user: User */ }) => ctx.user.name);
+```
+
+```ts copy
+authedResolver
+  .output(PostSchema)
+  .mutation(async ({ ctx /* user: User, prisma: PrismaClient */ }) => {
+    const post = await ctx.prisma.post.create({
+      data: {
+        user: ctx.user.id,
+        // ...
+      },
+    });
+
+    return post;
+  });
+```

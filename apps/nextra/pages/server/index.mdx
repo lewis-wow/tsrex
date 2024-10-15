@@ -1,0 +1,71 @@
+import { Image } from '../../components/Image';
+
+# PTSQ server
+
+The `ptsq` function creates an instance of the PTSQ server.
+However, it does not create the server components themselves, it creates a builder that offers the ability to add middleware to the entire server in addition to creating components.
+
+PTSQ itself does not offer any option to create an HTTP server.
+Like GraphQL or tRPC, PTSQ uses only a single HTTP endpoint.
+The library provides listeners for HTTP servers created by external modules such as [node:http](https://nodejs.org/api/http.html), [Express](https://expressjs.com/), [Fastify](https://fastify.dev/), or [Koa](https://koajs.com/), for serverless or alternative environments, such as [Bun](https://bun.sh/), [Deno](https://deno.com/), [AWS Lambda](https://aws.amazon.com/lambda/) or [Cloudflare workers](https://workers.cloudflare.com/) and for full-stack frameworks, such as [Next.js](https://nextjs.org/) or [SvelteKit](https://kit.svelte.dev/).
+
+<Image src="/assets/server-hierarchy.png" alt="Server hierarchy" />
+
+```ts copy filename="Creating a PTSQ server"
+import { ptsq } from '@ptsq/server';
+
+const { resolver, router serve, ptsqEndpoint } = ptsq().create();
+```
+
+You can directly export all created components for further use.
+
+```ts copy filename="Creating a PTSQ server"
+import { ptsq } from '@ptsq/server';
+
+export const { resolver, router serve, ptsqEndpoint } = ptsq().create();
+```
+
+## Server options
+
+### Context and CORS
+
+Both [context](/server/context) and [CORS](/server/cors) are described in other chapters.
+
+### Endpoint
+
+The `endpoint` setting specifies the path on which the PTSQ server will listen for requests.
+The default is `/ptsq`, which means that the server will listen on the HTTP endpoint `/ptsq`, for example `http://localhost:3000/ptsq`.
+
+If the PTSQ server is deployed inside a REST API endpoint, for example `/api`, the `endpoint` setting must respect this and so its value must be set to `/api/ptsq`.
+This is especially necessary when using PTSQ with a full-stack framework such as Next.js or SvelteKit, where the application can be deployed in the file-system routers provided by these frameworks.
+With this setting, trailing slashes are automatically removed, so it doesn't matter whether the value is set as `/api/ptsq` or `api/ptsq`.
+
+```ts copy filename="Endpoint setting"
+ptsq({
+  //...,
+  endpoint: 'api/ptsq',
+});
+
+ptsq({
+  //...,
+  endpoint: '/api/ptsq',
+});
+```
+
+### fetchAPI
+
+The fetchAPI option is for defining which API you will use for the request and response.
+
+```ts copy filename="fetchAPI setting"
+import type { Request, Response } from 'framework';
+
+ptsq({
+  //...,
+  fetchAPI: {
+    Request: Request,
+    Response: Response,
+  },
+});
+```
+
+It's very useful if you are using some integration that has its own request or response object.

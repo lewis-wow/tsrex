@@ -1,0 +1,18 @@
+{
+  "tryit": {
+    "type": "page",
+    "title": "Try it!",
+    "theme": {
+      "layout": "raw"
+    }
+  },
+  "index": "Introduction",
+  "installation": "Installation",
+  "validations": "Validations",
+  "server": "Server",
+  "client": "Client",
+  "introspection": "Introspection",
+  "integration": "Integration",
+  "real-application": "Real application",
+  "comparison": "Comparison"
+}

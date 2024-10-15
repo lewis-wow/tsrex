@@ -1,0 +1,234 @@
+# Custom client adapter
+
+In addition to the provided [React](https://react.dev/) and [Svelte](https://svelte.dev/) client adapters, PTSQ offers the flexibility to create custom client adapters tailored to specific use cases or frameworks.
+
+By creating a custom client adapter, you can seamlessly integrate PTSQ with any front-end framework or library of your choice.
+Whether you're working with [Angular](https://angular.io/), [Vue.js](https://vuejs.org/), or another frontend technology, a custom client adapter allows you to leverage the power and flexibility of PTSQ within your preferred development environment.
+
+Custom client adapters enable you to define how PTSQ interacts with your front-end application, including data fetching, state management, and UI updates.
+This level of customization ensures that PTSQ seamlessly integrates with your front-end architecture, providing a smooth and efficient developer experience.
+
+Whether you're building a complex web application or a lightweight mobile app, custom client adapters empower you to leverage the full potential of PTSQ while adhering to the specific requirements and conventions of your frontend stack.
+
+## Defining query and mutation types
+
+```ts copy filename="Client query type"
+export type Query<
+  _TDescription extends string | undefined,
+  TDefinition extends {
+    args?: any;
+    output: any;
+  },
+> = {
+  myQuery: (
+    requestInput: TDefinition['args'],
+  ) => Promise<TDefinition['output']>;
+};
+```
+
+```ts copy filename="Client mutation type"
+import type { RequestOptions } from './createProxyClient';
+
+export type Mutation<
+  _TDescription extends string | undefined,
+  TDefinition extends {
+    args?: any;
+    output: any;
+  },
+> = {
+  myMutate: (
+    requestInput: TDefinition['args'],
+  ) => Promise<TDefinition['output']>;
+};
+```
+
+### Conditional methods
+
+Imagine we want to show like `infiniteQuery` only if server accepts `cursor` property.
+
+```ts copy filename="Client query type with conditional method"
+export type Query<
+  _TDescription extends string | undefined,
+  TDefinition extends {
+    args?: any;
+    output: any;
+  },
+> = TDefinition['args'] extends { param: number }
+  ? {
+      myConditionalQuery: (
+        requestInput: Omit<TDefinition['args'], 'param'>,
+      ) => Promise<TDefinition['output']>;
+    }
+  : {};
+```
+
+## Client type
+
+Client type is for casting the result runtime Proxy-based client to correct types.
+
+```ts copy filename="Client type"
+import type {
+  inferArgs,
+  inferOutput,
+  IntrospectedRoute,
+  IntrospectedRouter,
+  Simplify,
+} from '@ptsq/server';
+import { inferDescription, inferResolverType } from '../../server/dist/types';
+import type { ReactMutation } from './reactMutation';
+import type { ReactQuery } from './reactQuery';
+
+export type ReactClientRouter<TRouter extends IntrospectedRouter> = {
+  [K in keyof TRouter['routes']]: TRouter['routes'][K] extends IntrospectedRouter
+    ? ReactClientRouter<TRouter['routes'][K]>
+    : TRouter['routes'][K] extends IntrospectedRoute
+      ? inferResolverType<TRouter['routes'][K]> extends 'query'
+        ? ReactQuery<
+            inferDescription<TRouter['routes'][K]>,
+            {
+              args: Simplify<inferArgs<TRouter['routes'][K]>>;
+              output: Simplify<inferOutput<TRouter['routes'][K]>>;
+            }
+          >
+        : inferResolverType<TRouter['routes'][K]> extends 'mutation'
+          ? ReactMutation<
+              inferDescription<TRouter['routes'][K]>,
+              {
+                args: Simplify<inferArgs<TRouter['routes'][K]>>;
+                output: Simplify<inferOutput<TRouter['routes'][K]>>;
+              }
+            >
+          : never
+      : never;
+};
+```
+
+This approach ensures that `@ptsq/server` is only required for development purposes, while `@ptsq/client` remains a production dependency.
+
+## Client runtime
+
+This is the implementation of React client in package `@ptsq/react-client`.
+
+```ts copy filename="react-client.ts"
+import {
+  createProxyUntypedClient,
+  httpFetch,
+  omit,
+  UndefinedAction,
+  type Router as ClientRouter,
+  type CreateProxyClientArgs,
+} from '@ptsq/client';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import { AnyPtsqUseInfiniteQueryOptions } from './ptsqUseInifniteQuery';
+import { PtsqUseMutationOptions } from './ptsqUseMutation';
+import { PtsqUseQueryOptions } from './ptsqUseQuery';
+import { PtsqUseSuspenseQueryOptions } from './ptsqUseSuspenseQuery';
+import type { ReactClientRouter } from './types';
+
+export const createReactClient = <TRouter extends ClientRouter>({
+  url,
+  links = [],
+  fetch = globalThis.fetch,
+}: CreateProxyClientArgs): ReactClientRouter<TRouter> =>
+  createProxyUntypedClient<{
+    useQuery: [unknown, PtsqUseQueryOptions | undefined];
+    useSuspenseQuery: [unknown, PtsqUseSuspenseQueryOptions | undefined];
+    useInfiniteQuery: [object, AnyPtsqUseInfiniteQueryOptions];
+    useMutation: [PtsqUseMutationOptions | undefined];
+  }>(({ route, action, args }) => {
+    switch (action) {
+      case 'useQuery':
+        return useQuery({
+          queryKey: [...route, ...(args?.[1]?.additionalQueryKey ?? [])],
+          queryFn: (context) =>
+            httpFetch({
+              url,
+              links,
+              meta: {
+                route: route.join('.'),
+                type: 'query',
+                input: args?.[0],
+              },
+              fetch: (input, init) => {
+                return fetch(input, {
+                  ...init,
+                  signal: context.signal,
+                });
+              },
+            }),
+          ...(args?.[1] ? omit(args[1], 'additionalQueryKey') : undefined),
+        });
+      case 'useSuspenseQuery':
+        return useSuspenseQuery({
+          queryKey: [...route, ...(args?.[1]?.additionalQueryKey ?? [])],
+          queryFn: (context) =>
+            httpFetch({
+              url,
+              links,
+              meta: {
+                route: route.join('.'),
+                type: 'query',
+                input: args?.[0],
+              },
+              fetch: (input, init) => {
+                return fetch(input, {
+                  ...init,
+                  signal: context.signal,
+                });
+              },
+            }),
+          ...(args?.[1] ? omit(args[1], 'additionalQueryKey') : undefined),
+        });
+      case 'useInfiniteQuery':
+        return useInfiniteQuery({
+          queryKey: [...route, ...(args[1].additionalQueryKey ?? [])],
+          queryFn: (context) =>
+            httpFetch({
+              url,
+              links,
+              meta: {
+                route: route.join('.'),
+                type: 'query',
+                input: { ...args[0], pageParam: context.pageParam },
+              },
+              fetch: (input, init) => {
+                return fetch(input, {
+                  ...init,
+                  signal: context.signal,
+                });
+              },
+            }),
+          ...omit(args[1], 'additionalQueryKey'),
+        });
+      case 'useMutation':
+        return useMutation({
+          mutationKey: [...route, ...(args[0]?.additionalMutationKey ?? [])],
+          mutationFn: (variables: any) =>
+            httpFetch({
+              url,
+              links,
+              meta: {
+                route: route.join('.'),
+                type: 'mutation',
+                input: variables,
+              },
+              fetch: (input, init) => {
+                return fetch(input, {
+                  ...init,
+                });
+              },
+            }),
+          ...(args[0] ? omit(args[0], 'additionalMutationKey') : undefined),
+        });
+      default:
+        throw new UndefinedAction();
+    }
+  }) as ReactClientRouter<TRouter>;
+```
+
+Of course, you can define as many methods as you want and create a runtime for them in the switch in `fetch` function in the `createProxyUntypedClient`.

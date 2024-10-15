@@ -1,0 +1,50 @@
+{
+  "name": "@ptsq/server",
+  "version": "0.6.7",
+  "homepage": "https://ptsq.vercel.app/",
+  "author": "lewis-wow",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lewis-wow/ptsq.git",
+    "directory": "packages/server"
+  },
+  "scripts": {
+    "prebuild": "rm -rf dist",
+    "build": "rollup --config rollup.config.ts --bundleConfigAsCjs",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
+  },
+  "main": "dist/main.js",
+  "module": "dist/main.mjs",
+  "typings": "dist/main.d.ts",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "package.json",
+    "!**/*.test.*"
+  ],
+  "devDependencies": {
+    "@ptsq/test-utils": "*",
+    "@types/node": "^20.7.0",
+    "@types/uuid": "^9.0.7",
+    "axios": "^1.5.1",
+    "json-schema-to-ts": "^3.0.1",
+    "typescript": "^5.2.2",
+    "uuid": "^9.0.1",
+    "vitest": "^0.34.6"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "0.31.28",
+    "@whatwg-node/server": "^0.9.34"
+  },
+  "peerDependencies": {
+    "@sinclair/typebox": "0.31.28"
+  }
+}

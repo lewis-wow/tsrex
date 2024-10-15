@@ -1,0 +1,23 @@
+{
+  "index": "PTSQ server",
+  "resolver": "Resolver",
+  "standalone-resolver": "Standalone resolver",
+  "resolver-chaining": "Resolver chaining",
+  "schema-transformation": "Schema transformation",
+  "schema-compilation": "Schema compilation",
+  "description": "Description",
+  "endpoint": "Endpoint",
+  "router": "Router",
+  "context": "Context",
+  "middleware": "Middleware",
+  "server-middleware": "Server middleware",
+  "standalone-middleware": "Standalone middleware",
+  "errors": "Errors",
+  "cors": "CORS",
+  "testing": "Testing",
+  "api-versioning": "API versioning",
+  "authentication": "Authentication",
+  "logging": "Logging",
+  "response-envelope": "Response envelope",
+  "documentation": "Documentation"
+}
