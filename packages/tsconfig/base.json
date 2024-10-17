@@ -9,15 +9,14 @@
     "forceConsistentCasingInFileNames": true,
     "inlineSources": false,
     "isolatedModules": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "preserveWatchOutput": true,
     "skipLibCheck": true,
     "strict": true,
     "strictNullChecks": true,
-    "lib": ["DOM"],
-    "target": "ES2015"
+    "target": "ES2022"
   },
   "exclude": ["node_modules"]
 }

@@ -26,13 +26,14 @@ module.exports = {
     'rollup.config.ts',
   ],
   rules: {
-    '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+    '@typescript-eslint/consistent-type-definitions': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/consistent-indexed-object-style': 'off',
     '@typescript-eslint/naming-convention': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/no-unsafe-assignment': 'off',
     '@typescript-eslint/no-floating-promises': 'off',
+    '@typescript-eslint/ban-types': 'off',
     'tsdoc/syntax': 'warn',
   },
 };
